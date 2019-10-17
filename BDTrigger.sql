@@ -1,0 +1,225 @@
+use master
+go
+
+drop database Lojainfo
+go
+create database Lojainfo	
+go 
+
+use Lojainfo
+GO
+
+create table tb_clientes(
+       id_cliente int PRIMARY KEY IDENTITY(1,1),
+       nome nvarchar(50) not null,
+       endereco nvarchar(100),
+       idade int NOT NULL,
+       sexo nvarchar(100) NOT NULL,
+       fone nvarchar(15),
+       email nvarchar(70),
+)
+GO
+
+
+create table tb_clientesAuditoria(
+       id_cliente int PRIMARY KEY IDENTITY(1,1),
+       nome nvarchar(50) not null,
+       endereco nvarchar(100),
+       idade int NOT NULL,
+       sexo nvarchar(100) NOT NULL,
+       fone nvarchar(15),
+       email nvarchar(70),
+       data date
+)
+GO
+
+create table tb_hardware(
+       id_hardware int PRIMARY KEY IDENTITY(1,1),
+       descricao nvarchar(50) not null,
+       preco_unit decimal NOT NULL,
+       qtde_atual int NOT NULL, --0 caso nao tenha no estoque
+       qtde_minima int,
+       img image DEFAULT NULL
+)
+GO
+
+create table tb_vendas(
+       id_venda int primary key IDENTITY(1,1),
+       id_cliente int not null,
+       data date not null,
+       desconto decimal(2,2)
+)
+GO
+
+create table tb_vendas_itens(
+       id_item int PRIMARY KEY identity(1,1),
+       id_venda int not null,
+       id_hardware int not null,
+       qtde_item int not null,
+       pco_vda decimal(8,2) not null
+)
+GO
+
+
+create table tb_vendas_canceladas(
+        id_venda_canceladas int primary key identity not null,
+       id_venda int not null UNIQUE
+      
+       
+
+
+
+)
+
+go
+
+
+alter table tb_vendas
+      ADD CONSTRAINT fk_vda_cli
+      FOREIGN KEY (id_cliente) REFERENCES tb_clientes(id_cliente)
+      go 
+
+alter table tb_vendas_itens
+	ADD CONSTRAINT fk_vda_venda 
+	FOREIGN KEY (id_venda) REFERENCES tb_vendas(id_venda)
+	go
+alter table tb_hardware
+	ADD CONSTRAINT fk_vda_hardware
+	FOREIGN KEY (id_hardware) REFERENCES tb_hardware(id_hardware)
+	go
+alter table tb_vendas_itens
+	ADD CONSTRAINT fk_vda_hardware2
+	FOREIGN KEY (id_hardware) REFERENCES tb_hardware(id_hardware)
+	go
+	
+	
+	
+alter table tb_vendas_canceladas
+	ADD CONSTRAINT fk_vda_cancel
+	FOREIGN KEY (id_venda) REFERENCES tb_vendas(id_venda)
+	go
+
+	
+	
+insert into tb_clientes (nome,idade,sexo,email,endereco,fone) VALUES 
+('Lucas',17,'Maculino','Lucas@gmail.com','AV paulista, 343', '94584545' ),
+('José',45,'Maculino','José@gmail.com','Rua Jacu Pessego, 191', '55124151' ),
+('Fulano',18,'Maculino','Fulano@gmail.com','Rua aldeia, 248', '8544121')
+
+																			
+go
+
+
+
+ insert into tb_hardware (descricao, preco_unit, qtde_atual, qtde_minima) VALUES ('PC', 543.00, 89, 15),
+('Placa de vídeo', 1000.00, 215, 720),
+('Gabinete', 900.00, 87,102),
+('Monitor', 1500, 22,6),
+('Mouse razer', 10.000, 40,10)
+go
+insert into tb_vendas (id_cliente,data) VALUES (2,'22/04/2002'),
+(2,'23/11/2002'),
+(3,'31/05/2011'),
+(2,'14/10/2012'),
+(3,'30/09/2013')
+go
+insert into tb_vendas_itens (id_venda,id_hardware,pco_vda,qtde_item) VALUES 
+(1,1,1000.00,1),
+(2,2,900.00,2),
+(3,3,1000.00,3),
+(4,2,800.00,7),
+(5,3,7000.00,9)
+go
+
+
+insert into tb_clientesAuditoria (nome,idade,sexo,email,endereco,fone,data) VALUES 
+('Lucas',17,'Maculino','Lucas@gmail.com','AV paulista, 343', '94584545','23/03/2019' ),
+('José',45,'Maculino','José@gmail.com','Rua Jacu Pessego, 191', '55124151','25/04/2002' ),
+('Fulano',18,'Maculino','Fulano@gmail.com','Rua aldeia, 248', '8544121','23/09/2005')
+
+																			
+go
+
+
+insert into tb_vendas_canceladas VALUES
+(3)
+
+GO
+
+
+	create trigger minhatrigger on tb_clientes for insert as
+	
+	declare @cliid_cliente nvarchar(50);
+	declare @clinome nvarchar (50);
+	declare @cliendereco nvarchar(50);
+	declare @cliidade int;
+	declare @clisexo nvarchar (100);
+	declare @clifone nvarchar (15);
+	declare @cliemail nvarchar (70);
+	declare @clidata date; 
+	 
+	select @cliid_cliente = i.id_cliente from inserted i;
+		
+	select @clinome = i.nome from inserted i;
+	
+	select @cliendereco = i.endereco from inserted i;
+	
+	select @clifone = i.fone from inserted i;
+	
+	select @cliemail = i.email from inserted i;	
+
+	insert into tb_clientesAuditoria (id_cliente,nome,endereco, fone, email, data)
+	values (@cliid_cliente,@clinome,@cliendereco,@clifone,@cliemail,GETDATE());
+go
+
+select * from tb_clientesAuditoria
+go
+		
+/*
+																			  
+																			 
+select * from tb_clientes
+go
+select * from tb_hardware
+go
+select * from tb_vendas
+go
+select * from tb_vendas_itens
+go
+select * from tb_vendas_canceladas
+go
+
+
+
+
+
+Busca somente os clientes que fizeram compra 
+
+
+
+
+select v.id_cliente, c.nome FROM tb_vendas v
+inner join tb_clientes c
+on v.id_cliente = c.id_cliente
+
+go
+
+
+
+ Busca somente os clientes que não fizeram a compra 
+
+select v.id_cliente, c.nome FROM tb_clientes c
+left join tb_vendas v
+on v.id_cliente = c.id_cliente 
+WHERE v.id_cliente is null
+
+
+
+
+select vi.id_hardware, h.id_hardware, h.descricao FROM tb_hardware as h
+left join tb_vendas_itens vi
+on vi.id_hardware = h.id_hardware  WHERE vi.id_hardware is null
+
+go 
+
+*/
